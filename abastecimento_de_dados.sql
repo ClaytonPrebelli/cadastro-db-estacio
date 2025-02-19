@@ -1,29 +1,44 @@
--- Inserir Usuários
-INSERT INTO Usuarios (nome, senha) VALUES ('op1', 'op1');
-INSERT INTO Usuarios (nome, senha) VALUES ('op2', 'op2');
+-- Usando o banco de dados
+USE Loja;
 GO
 
--- Inserir Produtos
-INSERT INTO Produtos (nome, quantidade, preco_venda) VALUES ('Produto A', 100, 50.00);
-INSERT INTO Produtos (nome, quantidade, preco_venda) VALUES ('Produto B', 200, 30.00);
-INSERT INTO Produtos (nome, quantidade, preco_venda) VALUES ('Produto C', 150, 70.00);
-GO
+-- Inserindo usuários
+INSERT INTO Usuarios (Nome, Senha) VALUES ('op1', 'op1');
+INSERT INTO Usuarios (Nome, Senha) VALUES ('op2', 'op2');
 
--- Inserir Pessoas Físicas
-INSERT INTO Pessoa (nome, endereco, telefone, tipo_pessoa) VALUES ('João Silva', 'Rua A, 123', '1234567890', 'Física');
-INSERT INTO PessoaFisica (id_pessoa, cpf) VALUES (1, '123.456.789-00');
-GO
+-- Inserindo produtos
+INSERT INTO Produtos (Nome, Quantidade, PrecoVenda) VALUES ('Produto A', 50, 10.00);
+INSERT INTO Produtos (Nome, Quantidade, PrecoVenda) VALUES ('Produto B', 30, 20.50);
+INSERT INTO Produtos (Nome, Quantidade, PrecoVenda) VALUES ('Produto C', 100, 5.75);
 
--- Inserir Pessoas Jurídicas
-INSERT INTO Pessoa (nome, endereco, telefone, tipo_pessoa) VALUES ('Empresa X', 'Avenida B, 456', '9876543210', 'Jurídica');
-INSERT INTO PessoaJuridica (id_pessoa, cnpj) VALUES (2, '12.345.678/0001-99');
-GO
+-- Inserindo pessoas físicas
+DECLARE @PessoaID INT = NEXT VALUE FOR Seq_PessoaID;
+INSERT INTO Pessoas (PessoaID, Nome, Endereco, Telefone) VALUES (@PessoaID, 'João Silva', 'Rua 1, 100', '11987654321');
+INSERT INTO PessoasFisicas (PessoaID, CPF) VALUES (@PessoaID, '12345678901');
 
--- Inserir Movimentações (Compras e Vendas)
--- Movimentação de Compra
-INSERT INTO Movimentacoes (tipo_movimentacao, id_produto, id_usuario, id_pessoa, quantidade, preco_unitario)
-VALUES ('E', 1, 1, 2, 50, 40.00); -- Compra de 50 unidades do Produto A, pelo usuário op1 para a empresa X
--- Movimentação de Venda
-INSERT INTO Movimentacoes (tipo_movimentacao, id_produto, id_usuario, id_pessoa, quantidade, preco_unitario)
-VALUES ('S', 1, 2, 1, 20, 50.00); -- Venda de 20 unidades do Produto A, pelo usuário op2 para João Silva
-GO
+SET @PessoaID = NEXT VALUE FOR Seq_PessoaID;
+INSERT INTO Pessoas (PessoaID, Nome, Endereco, Telefone) VALUES (@PessoaID, 'Maria Souza', 'Rua 2, 200', '11976543210');
+INSERT INTO PessoasFisicas (PessoaID, CPF) VALUES (@PessoaID, '98765432100');
+
+-- Inserindo pessoas jurídicas
+SET @PessoaID = NEXT VALUE FOR Seq_PessoaID;
+INSERT INTO Pessoas (PessoaID, Nome, Endereco, Telefone) VALUES (@PessoaID, 'Empresa XYZ', 'Av. Industrial, 500', '1133324455');
+INSERT INTO PessoasJuridicas (PessoaID, CNPJ) VALUES (@PessoaID, '11222333444455');
+
+SET @PessoaID = NEXT VALUE FOR Seq_PessoaID;
+INSERT INTO Pessoas (PessoaID, Nome, Endereco, Telefone) VALUES (@PessoaID, 'Empresa ABC', 'Av. Central, 600', '1144455566');
+INSERT INTO PessoasJuridicas (PessoaID, CNPJ) VALUES (@PessoaID, '55667788990011');
+
+-- Inserindo movimentações de entrada (compra de produtos)
+INSERT INTO Movimentacoes (Tipo, UsuarioID, ProdutoID, PessoaID, Quantidade, PrecoUnitario)
+VALUES ('E', 1, 1, 3, 20, 9.50);
+
+INSERT INTO Movimentacoes (Tipo, UsuarioID, ProdutoID, PessoaID, Quantidade, PrecoUnitario)
+VALUES ('E', 2, 2, 4, 10, 19.00);
+
+-- Inserindo movimentações de saída (venda de produtos)
+INSERT INTO Movimentacoes (Tipo, UsuarioID, ProdutoID, PessoaID, Quantidade, PrecoUnitario)
+VALUES ('S', 1, 1, 1, 5, 10.00);
+
+INSERT INTO Movimentacoes (Tipo, UsuarioID, ProdutoID, PessoaID, Quantidade, PrecoUnitario)
+VALUES ('S', 2, 2, 2, 3, 20.50);

@@ -1,70 +1,69 @@
--- Dados completos de pessoas físicas
-SELECT p.id_pessoa, p.nome, p.endereco, p.telefone, pf.cpf
-FROM Pessoa p
-INNER JOIN PessoaFisica pf ON p.id_pessoa = pf.id_pessoa
-WHERE p.tipo_pessoa = 'Física';
+-- Usando o banco de dados
+USE LojaDB;
+GO
 
--- Dados completos de pessoas jurídicas
-SELECT p.id_pessoa, p.nome, p.endereco, p.telefone, pj.cnpj
-FROM Pessoa p
-INNER JOIN PessoaJuridica pj ON p.id_pessoa = pj.id_pessoa
-WHERE p.tipo_pessoa = 'Jurídica';
+-- 1. Dados completos de pessoas físicas
+SELECT P.*, PF.CPF 
+FROM Pessoas P
+JOIN PessoasFisicas PF ON P.PessoaID = PF.PessoaID;
 
--- Movimentações de entrada (compra)
-SELECT m.tipo_movimentacao, p.nome AS produto, pj.nome AS fornecedor, m.quantidade, m.preco_unitario, m.valor_total
-FROM Movimentacoes m
-INNER JOIN Produtos p ON m.id_produto = p.id_produto
-INNER JOIN PessoaJuridica pj ON m.id_pessoa = pj.id_pessoa
-WHERE m.tipo_movimentacao = 'E';
+-- 2. Dados completos de pessoas jurídicas
+SELECT P.*, PJ.CNPJ 
+FROM Pessoas P
+JOIN PessoasJuridicas PJ ON P.PessoaID = PJ.PessoaID;
 
--- Movimentações de saída (venda)
-SELECT m.tipo_movimentacao, p.nome AS produto, pf.nome AS comprador, m.quantidade, m.preco_unitario, m.valor_total
-FROM Movimentacoes m
-INNER JOIN Produtos p ON m.id_produto = p.id_produto
-INNER JOIN PessoaFisica pf ON m.id_pessoa = pf.id_pessoa
-WHERE m.tipo_movimentacao = 'S';
+-- 3. Movimentações de entrada (compras)
+SELECT M.MovimentacaoID, M.DataMovimentacao, U.Nome AS Operador, P.Nome AS Produto, Pe.Nome AS Fornecedor, M.Quantidade, M.PrecoUnitario, (M.Quantidade * M.PrecoUnitario) AS ValorTotal
+FROM Movimentacoes M
+JOIN Usuarios U ON M.UsuarioID = U.UsuarioID
+JOIN Produtos P ON M.ProdutoID = P.ProdutoID
+JOIN Pessoas Pe ON M.PessoaID = Pe.PessoaID
+WHERE M.Tipo = 'E';
 
--- Valor total das entradas agrupadas por produto
-SELECT p.nome AS produto, SUM(m.valor_total) AS valor_total_entrada
-FROM Movimentacoes m
-INNER JOIN Produtos p ON m.id_produto = p.id_produto
-WHERE m.tipo_movimentacao = 'E'
-GROUP BY p.nome;
+-- 4. Movimentações de saída (vendas)
+SELECT M.MovimentacaoID, M.DataMovimentacao, U.Nome AS Operador, P.Nome AS Produto, Pe.Nome AS Comprador, M.Quantidade, M.PrecoUnitario, (M.Quantidade * M.PrecoUnitario) AS ValorTotal
+FROM Movimentacoes M
+JOIN Usuarios U ON M.UsuarioID = U.UsuarioID
+JOIN Produtos P ON M.ProdutoID = P.ProdutoID
+JOIN Pessoas Pe ON M.PessoaID = Pe.PessoaID
+WHERE M.Tipo = 'S';
 
--- Valor total das saídas agrupadas por produto
-SELECT p.nome AS produto, SUM(m.valor_total) AS valor_total_saida
-FROM Movimentacoes m
-INNER JOIN Produtos p ON m.id_produto = p.id_produto
-WHERE m.tipo_movimentacao = 'S'
-GROUP BY p.nome;
+-- 5. Valor total das entradas agrupadas por produto
+SELECT P.Nome AS Produto, SUM(M.Quantidade * M.PrecoUnitario) AS ValorTotal
+FROM Movimentacoes M
+JOIN Produtos P ON M.ProdutoID = P.ProdutoID
+WHERE M.Tipo = 'E'
+GROUP BY P.Nome;
 
--- Operadores que não efetuaram movimentações de entrada (compra)
-SELECT u.nome AS operador
-FROM Usuarios u
-WHERE NOT EXISTS (
-    SELECT 1
-    FROM Movimentacoes m
-    WHERE m.id_usuario = u.id_usuario AND m.tipo_movimentacao = 'E'
-);
+-- 6. Valor total das saídas agrupadas por produto
+SELECT P.Nome AS Produto, SUM(M.Quantidade * M.PrecoUnitario) AS ValorTotal
+FROM Movimentacoes M
+JOIN Produtos P ON M.ProdutoID = P.ProdutoID
+WHERE M.Tipo = 'S'
+GROUP BY P.Nome;
 
--- Valor total de entrada, agrupado por operador
-SELECT u.nome AS operador, SUM(m.valor_total) AS valor_total_entrada
-FROM Movimentacoes m
-INNER JOIN Usuarios u ON m.id_usuario = u.id_usuario
-WHERE m.tipo_movimentacao = 'E'
-GROUP BY u.nome;
+-- 7. Operadores que não efetuaram movimentações de entrada
+SELECT U.Nome 
+FROM Usuarios U
+WHERE U.UsuarioID NOT IN (SELECT DISTINCT UsuarioID FROM Movimentacoes WHERE Tipo = 'E');
 
--- Valor total de saída, agrupado por operador
-SELECT u.nome AS operador, SUM(m.valor_total) AS valor_total_saida
-FROM Movimentacoes m
-INNER JOIN Usuarios u ON m.id_usuario = u.id_usuario
-WHERE m.tipo_movimentacao = 'S'
-GROUP BY u.nome;
+-- 8. Valor total de entrada agrupado por operador
+SELECT U.Nome AS Operador, SUM(M.Quantidade * M.PrecoUnitario) AS ValorTotal
+FROM Movimentacoes M
+JOIN Usuarios U ON M.UsuarioID = U.UsuarioID
+WHERE M.Tipo = 'E'
+GROUP BY U.Nome;
 
--- Valor médio de venda por produto, utilizando média ponderada
-SELECT p.nome AS produto, 
-       SUM(m.valor_total) / SUM(m.quantidade) AS valor_medio_venda
-FROM Movimentacoes m
-INNER JOIN Produtos p ON m.id_produto = p.id_produto
-WHERE m.tipo_movimentacao = 'S'
-GROUP BY p.nome;
+-- 9. Valor total de saída agrupado por operador
+SELECT U.Nome AS Operador, SUM(M.Quantidade * M.PrecoUnitario) AS ValorTotal
+FROM Movimentacoes M
+JOIN Usuarios U ON M.UsuarioID = U.UsuarioID
+WHERE M.Tipo = 'S'
+GROUP BY U.Nome;
+
+-- 10. Valor médio de venda por produto (média ponderada)
+SELECT P.Nome AS Produto, SUM(M.Quantidade * M.PrecoUnitario) / NULLIF(SUM(M.Quantidade), 0) AS ValorMedioVenda
+FROM Movimentacoes M
+JOIN Produtos P ON M.ProdutoID = P.ProdutoID
+WHERE M.Tipo = 'S'
+GROUP BY P.Nome;

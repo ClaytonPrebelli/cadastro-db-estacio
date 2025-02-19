@@ -1,68 +1,65 @@
--- Criação do Banco de Dados
-CREATE DATABASE loja;
+-- Criando o banco de dados
+CREATE DATABASE Loja;
 GO
 
--- Usar o banco de dados
-USE loja;
+-- Usando o banco de dados
+USE Loja;
 GO
 
--- Criação das tabelas
--- Tabela de Usuários
+-- Criando a sequence para os IDs de Pessoa
+CREATE SEQUENCE Seq_PessoaID
+    START WITH 1
+    INCREMENT BY 1;
+GO
+
+-- Criando a tabela de Usuários
 CREATE TABLE Usuarios (
-    id_usuario INT IDENTITY PRIMARY KEY,
-    nome VARCHAR(100),
-    senha VARCHAR(100)
+    UsuarioID INT IDENTITY(1,1) PRIMARY KEY,
+    Nome NVARCHAR(100) NOT NULL,
+    Senha NVARCHAR(100) NOT NULL
 );
-GO
 
--- Tabela de Produtos
+-- Criando a tabela de Pessoas
+CREATE TABLE Pessoas (
+    PessoaID INT PRIMARY KEY DEFAULT (NEXT VALUE FOR Seq_PessoaID),
+    Nome NVARCHAR(100) NOT NULL,
+    Endereco NVARCHAR(255),
+    Telefone NVARCHAR(20)
+);
+
+-- Criando a tabela de Pessoas Físicas
+CREATE TABLE PessoasFisicas (
+    PessoaID INT PRIMARY KEY,
+    CPF CHAR(11) UNIQUE NOT NULL,
+    FOREIGN KEY (PessoaID) REFERENCES Pessoas(PessoaID) ON DELETE CASCADE
+);
+
+-- Criando a tabela de Pessoas Jurídicas
+CREATE TABLE PessoasJuridicas (
+    PessoaID INT PRIMARY KEY,
+    CNPJ CHAR(14) UNIQUE NOT NULL,
+    FOREIGN KEY (PessoaID) REFERENCES Pessoas(PessoaID) ON DELETE CASCADE
+);
+
+-- Criando a tabela de Produtos
 CREATE TABLE Produtos (
-    id_produto INT IDENTITY PRIMARY KEY,
-    nome VARCHAR(100),
-    quantidade INT,
-    preco_venda DECIMAL(10, 2)
+    ProdutoID INT IDENTITY(1,1) PRIMARY KEY,
+    Nome NVARCHAR(100) NOT NULL,
+    Quantidade INT NOT NULL,
+    PrecoVenda DECIMAL(10,2) NOT NULL
 );
-GO
 
--- Tabela de Pessoa
-CREATE TABLE Pessoa (
-    id_pessoa INT IDENTITY PRIMARY KEY,
-    nome VARCHAR(100),
-    endereco VARCHAR(200),
-    telefone VARCHAR(20),
-    tipo_pessoa VARCHAR(20) -- Pessoa Física ou Jurídica
-);
-GO
-
--- Tabela de Pessoa Física
-CREATE TABLE PessoaFisica (
-    id_pessoa INT PRIMARY KEY,
-    cpf VARCHAR(14),
-    FOREIGN KEY (id_pessoa) REFERENCES Pessoa(id_pessoa)
-);
-GO
-
--- Tabela de Pessoa Jurídica
-CREATE TABLE PessoaJuridica (
-    id_pessoa INT PRIMARY KEY,
-    cnpj VARCHAR(18),
-    FOREIGN KEY (id_pessoa) REFERENCES Pessoa(id_pessoa)
-);
-GO
-
--- Tabela de Movimentações (Compra e Venda)
+-- Criando a tabela de Movimentações
 CREATE TABLE Movimentacoes (
-    id_movimentacao INT IDENTITY PRIMARY KEY,
-    tipo_movimentacao CHAR(1),  -- 'E' para entrada (compra), 'S' para saída (venda)
-    id_produto INT,
-    id_usuario INT,
-    id_pessoa INT,
-    quantidade INT,
-    preco_unitario DECIMAL(10, 2),
-    valor_total DECIMAL(10, 2) AS (quantidade * preco_unitario) PERSISTED, -- Valor total (quantidade * preço unitário)
-    data_movimentacao DATETIME DEFAULT GETDATE(),
-    FOREIGN KEY (id_produto) REFERENCES Produtos(id_produto),
-    FOREIGN KEY (id_usuario) REFERENCES Usuarios(id_usuario),
-    FOREIGN KEY (id_pessoa) REFERENCES Pessoa(id_pessoa)
+    MovimentacaoID INT IDENTITY(1,1) PRIMARY KEY,
+    Tipo CHAR(1) CHECK (Tipo IN ('E', 'S')) NOT NULL,
+    UsuarioID INT NOT NULL,
+    ProdutoID INT NOT NULL,
+    PessoaID INT NOT NULL,
+    Quantidade INT NOT NULL,
+    PrecoUnitario DECIMAL(10,2) NOT NULL,
+    DataMovimentacao DATETIME DEFAULT GETDATE(),
+    FOREIGN KEY (UsuarioID) REFERENCES Usuarios(UsuarioID),
+    FOREIGN KEY (ProdutoID) REFERENCES Produtos(ProdutoID),
+    FOREIGN KEY (PessoaID) REFERENCES Pessoas(PessoaID)
 );
-GO
